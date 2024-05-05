@@ -2,7 +2,7 @@
 
 ## Installation
 ```bash
-cargo install --release --git https://github.com/rob-maron/quiccat
+cargo install --profile release --git https://github.com/rob-maron/quiccat
 ```
 
 ## Usage
