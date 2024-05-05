@@ -13,6 +13,11 @@ struct Args {
     #[arg()]
     endpoint: String,
 
+    /// Disable certificate validation. This is useful for testing locally or with
+    /// self-signed certificates.
+    #[arg(short, long, action)]
+    insecure: bool,
+
     /// The timeout for the connection attempt, in seconds. If not provided, the default
     /// is 2 seconds.
     #[arg(short, long, default_value = "2")]
@@ -35,8 +40,8 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     // Create a new client based on the provided arguments
-    let mut config =
-        Client::new(&args.ca_cert_path).with_context(|| "Failed to create QUIC client")?;
+    let mut config = Client::new(&args.ca_cert_path, args.insecure)
+        .with_context(|| "Failed to create QUIC client")?;
 
     // Test the connection to the remote endpoint
     config

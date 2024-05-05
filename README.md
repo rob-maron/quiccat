@@ -21,6 +21,11 @@ To a local QUIC server with a 1s timeout:
 qc localhost:4433 -t 1 --ca-cert-path /path/to/ca-cert.pem
 ```
 
+To a local QUIC server without supplying a certificate:
+```bash
+qc localhost:4433 --insecure
+```
+
 To a QUIC server with an alternative TLS certificate name indicated:
 ```bash
 qc example.com:443 --server-name example.org
@@ -31,6 +36,8 @@ qc example.com:443 --server-name example.org
 
 ### Options
   - `-c, --ca-cert-path` `<CA_CERT_PATH>`: The path to the trusted CA certificate file. If not provided, the system's root CA store will be used.
+
+  - `-i, --insecure`: Disable certificate validation. This is useful for testing locally or with self-signed certificates.
 
   - `-t, --timeout` `<TIMEOUT>`: The timeout for the connection attempt, in seconds. If not provided, the default is 2 seconds.
 
@@ -44,5 +51,6 @@ qc example.com:443 --server-name example.org
 ## In-progress
 - [x] Support for custom certificates
 - [x] Support for custom SNI
+- [x] Support for disabling server certificate verification
 - [ ] Support for running a test server
 - [ ] Telnet-like plaintext mode

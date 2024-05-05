@@ -1,9 +1,13 @@
-use std::{net::ToSocketAddrs, time::Duration};
+use std::{net::ToSocketAddrs, sync::Arc, time::Duration};
 
 use anyhow::{Context, Result};
 use quinn::{ClientConfig, Endpoint};
 use rustls::{Certificate, RootCertStore};
 use tokio::time::timeout;
+
+use self::tls::SkipServerCertVerify;
+
+mod tls;
 
 pub struct Client {
     local_endpoint: Endpoint,
@@ -11,31 +15,38 @@ pub struct Client {
 
 impl Client {
     /// Create a new QUIC client from the provided CA cert path
-    pub fn new(ca_cert_path: &Option<String>) -> Result<Self> {
-        // Create a client configuration based on the provided CA cert path
-        // If one is not provided, the system's root CA store will be used
-        let client_config = if let Some(ca_cert_path) = ca_cert_path {
-            // Create a new root cert store
-            let mut cert_store = RootCertStore::empty();
-
-            // Read the CA cert file
-            let ca_cert_file = std::fs::read_to_string(ca_cert_path)
-                .with_context(|| "Failed to read CA cert file")?;
-
-            // Parse the CA cert file
-            let ca_cert = pem::parse(ca_cert_file.as_bytes())
-                .map_err(|e| anyhow::anyhow!("Failed to parse CA cert: {}", e))?;
-
-            // Add the CA cert to the root cert store
-            cert_store
-                .add(&Certificate(ca_cert.into_contents()))
-                .with_context(|| "Failed to add provided CA cert to root cert store")?;
-
-            // Create a new client config with the root cert store
-            ClientConfig::with_root_certificates(cert_store)
+    pub fn new(ca_cert_path: &Option<String>, insecure: bool) -> Result<Self> {
+        // Create a client configuration based on the provided CA cert path and insecure flag.
+        //
+        // If a cert is not provided, the system's root CA store will be used. If the insecure
+        // flag is set, a custom verifier will be used to skip server certificate verification.
+        let client_config = if insecure {
+            // If the insecure flag is set, create a new client config with a custom verifier
+            ClientConfig::new(Arc::from(SkipServerCertVerify::new_config()))
         } else {
-            // Use the system's root cert store
-            ClientConfig::with_native_roots()
+            if let Some(ca_cert_path) = ca_cert_path {
+                // Create a new root cert store
+                let mut cert_store = RootCertStore::empty();
+
+                // Read the CA cert file
+                let ca_cert_file = std::fs::read_to_string(ca_cert_path)
+                    .with_context(|| "Failed to read CA cert file")?;
+
+                // Parse the CA cert file
+                let ca_cert = pem::parse(ca_cert_file.as_bytes())
+                    .map_err(|e| anyhow::anyhow!("Failed to parse CA cert: {}", e))?;
+
+                // Add the CA cert to the root cert store
+                cert_store
+                    .add(&Certificate(ca_cert.into_contents()))
+                    .with_context(|| "Failed to add provided CA cert to root cert store")?;
+
+                // Create a new client config with the root cert store
+                ClientConfig::with_root_certificates(cert_store)
+            } else {
+                // Use the system's root cert store
+                ClientConfig::with_native_roots()
+            }
         };
 
         // Create a new QUIC client with the provided client config
