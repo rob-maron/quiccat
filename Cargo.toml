@@ -1,0 +1,14 @@
+[package]
+name = "qc"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1", default-features = false, features = ["macros", "rt-multi-thread"] }
+quinn = { version = "0.10", default-features = false, features = ["runtime-tokio", "tls-rustls", "native-certs"] }
+clap = { version = "4", features = ["derive"] }
+anyhow = "1"
+rustls = { version = "0.21", default-features = false }
+pem = { version = "3", default-features = false }
